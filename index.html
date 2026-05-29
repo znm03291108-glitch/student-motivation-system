@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>星星成长计划 V2 登录版</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <section id="authView" class="auth-card">
+      <div class="brand-badge">⭐</div>
+      <h1>星星成长计划 V2</h1>
+      <p class="muted">登录版 · 云端数据保存 · 家长/老师监督</p>
+
+      <div class="tabs auth-tabs">
+        <button class="tab active" data-auth-tab="login">登录</button>
+        <button class="tab" data-auth-tab="register">注册</button>
+      </div>
+
+      <form id="loginForm" class="form">
+        <label>邮箱</label>
+        <input id="loginEmail" type="email" placeholder="请输入邮箱" required />
+        <label>密码</label>
+        <input id="loginPassword" type="password" placeholder="请输入密码" required minlength="6" />
+        <button class="primary" type="submit">登录系统</button>
+      </form>
+
+      <form id="registerForm" class="form hidden">
+        <label>姓名</label>
+        <input id="regName" type="text" placeholder="例如：小明" required />
+        <label>邮箱</label>
+        <input id="regEmail" type="email" placeholder="请输入邮箱" required />
+        <label>密码</label>
+        <input id="regPassword" type="password" placeholder="至少 6 位" required minlength="6" />
+        <label>身份</label>
+        <select id="regRole">
+          <option value="student">学生</option>
+          <option value="parent">家长</option>
+          <option value="teacher">老师</option>
+        </select>
+        <button class="primary" type="submit">注册并进入</button>
+      </form>
+
+      <div id="authMsg" class="msg"></div>
+      <p class="tip">首次使用前，需要先在 Firebase 中填写配置。教程见 README。</p>
+    </section>
+
+    <section id="mainView" class="hidden">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">中小学生学习效率提升系统</p>
+          <h1>星星成长计划 V2</h1>
+          <p id="userLine">正在读取账号...</p>
+        </div>
+        <button id="logoutBtn" class="ghost">退出</button>
+        <div class="score-card">
+          <span>当前积分</span>
+          <strong id="scoreValue">0</strong>
+          <small id="levelValue">青铜小学霸</small>
+        </div>
+      </header>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-page="home">首页</button>
+        <button class="nav-btn" data-page="tasks">任务</button>
+        <button class="nav-btn" data-page="rewards">奖励</button>
+        <button class="nav-btn" data-page="penalties">惩罚</button>
+        <button class="nav-btn" data-page="admin">监督</button>
+      </nav>
+
+      <main>
+        <section id="home" class="page active">
+          <div class="grid two">
+            <div class="panel">
+              <h2>今日状态</h2>
+              <div class="big-number" id="todayDone">0</div>
+              <p>今日已完成任务</p>
+              <button id="checkinBtn" class="secondary">每日签到 +5</button>
+            </div>
+            <div class="panel">
+              <h2>成长等级</h2>
+              <div class="progress"><i id="levelBar"></i></div>
+              <p id="nextLevelText">距离下一等级还需 50 分</p>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>学生排行榜</h2>
+            <div id="rankList" class="rank-list"></div>
+          </div>
+        </section>
+
+        <section id="tasks" class="page">
+          <div class="panel">
+            <h2>学习任务</h2>
+            <div id="taskList" class="list"></div>
+          </div>
+          <div class="panel admin-only hidden">
+            <h2>老师/家长添加任务</h2>
+            <form id="taskForm" class="inline-form">
+              <input id="taskTitle" placeholder="任务名称，如：英语跟读 20 分钟" required />
+              <input id="taskPoints" type="number" placeholder="积分" value="10" required />
+              <button class="primary">添加</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="rewards" class="page">
+          <div class="panel">
+            <h2>奖励中心</h2>
+            <div id="rewardList" class="list"></div>
+          </div>
+          <div class="panel admin-only hidden">
+            <h2>添加奖励</h2>
+            <form id="rewardForm" class="inline-form">
+              <input id="rewardTitle" placeholder="奖励名称，如：看动画 20 分钟" required />
+              <input id="rewardCost" type="number" placeholder="消耗积分" value="30" required />
+              <button class="primary">添加</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="penalties" class="page">
+          <div class="panel">
+            <h2>惩罚规则</h2>
+            <div id="penaltyList" class="list"></div>
+          </div>
+          <div class="panel admin-only hidden">
+            <h2>添加惩罚</h2>
+            <form id="penaltyForm" class="inline-form">
+              <input id="penaltyTitle" placeholder="惩罚名称，如：作业拖延" required />
+              <input id="penaltyPoints" type="number" placeholder="扣分" value="5" required />
+              <button class="danger">添加</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="admin" class="page">
+          <div class="panel">
+            <h2>家长/老师监督台</h2>
+            <p class="muted">学生可以查看积分；家长/老师可以添加任务、奖励和惩罚规则。</p>
+            <div id="adminStudents" class="rank-list"></div>
+          </div>
+          <div class="panel">
+            <h2>操作记录</h2>
+            <div id="logList" class="log-list"></div>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

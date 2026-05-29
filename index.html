@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星星成长计划 V3 · 苏教版课程学习版</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="authView" class="auth-shell">
+    <div class="auth-card">
+      <div class="logo">⭐</div>
+      <h1>星星成长计划 V3</h1>
+      <p>登录版 · 云端保存 · 一至六年级课程学习</p>
+
+      <div class="tabs">
+        <button class="active" data-auth-tab="login">登录</button>
+        <button data-auth-tab="register">注册</button>
+      </div>
+
+      <form id="loginForm" class="form">
+        <label>邮箱</label>
+        <input id="loginEmail" type="email" placeholder="请输入邮箱" required />
+        <label>密码</label>
+        <input id="loginPassword" type="password" placeholder="至少 6 位" required />
+        <button class="primary full" type="submit">登录系统</button>
+      </form>
+
+      <form id="registerForm" class="form hidden">
+        <label>姓名</label>
+        <input id="regName" placeholder="例如：小明 / 张老师 / 妈妈" required />
+        <label>身份</label>
+        <select id="regRole">
+          <option value="student">学生</option>
+          <option value="parent">家长</option>
+          <option value="teacher">老师</option>
+        </select>
+        <label>邮箱</label>
+        <input id="regEmail" type="email" placeholder="请输入邮箱" required />
+        <label>密码</label>
+        <input id="regPassword" type="password" placeholder="至少 6 位" required />
+        <button class="primary full" type="submit">注册账号</button>
+      </form>
+
+      <p id="authMsg" class="msg"></p>
+    </div>
+  </div>
+
+  <div id="mainView" class="hidden">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">中小学生学习效率提升系统</p>
+        <h1>星星成长计划 V3</h1>
+        <p id="userLine">加载中...</p>
+      </div>
+      <button id="logoutBtn" class="ghost">退出</button>
+      <div class="score-card">
+        <span>当前积分</span>
+        <strong id="scoreValue">0</strong>
+        <small id="levelValue">青铜小学霸</small>
+      </div>
+    </header>
+
+    <nav class="nav">
+      <button class="nav-btn active" data-page="homePage">首页</button>
+      <button class="nav-btn" data-page="coursePage">课程学习</button>
+      <button class="nav-btn" data-page="practicePage">同步练习</button>
+      <button class="nav-btn" data-page="mistakePage">错题本</button>
+      <button class="nav-btn" data-page="taskPage">任务</button>
+      <button class="nav-btn" data-page="rewardPage">奖励</button>
+      <button class="nav-btn" data-page="adminPage">家长/老师</button>
+      <button class="nav-btn" data-page="rankPage">排行</button>
+    </nav>
+
+    <main>
+      <section id="homePage" class="page active">
+        <div class="grid two">
+          <div class="card">
+            <h2>今日状态</h2>
+            <div class="big-num" id="todayDone">0</div>
+            <p>今日已完成学习任务</p>
+            <button id="checkinBtn" class="secondary">每日签到 +5</button>
+          </div>
+          <div class="card">
+            <h2>成长等级</h2>
+            <div class="progress"><span id="levelBar"></span></div>
+            <p id="nextLevelText">距离下一等级还需 80 分</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>本周学习目标</h2>
+          <ul class="goal-list">
+            <li>每天完成 1 个课程知识点</li>
+            <li>完成 5 次同步练习</li>
+            <li>复习错题 3 次</li>
+            <li>连续签到 7 天</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>课程学习入口</h2>
+          <p>按年级、学科、上下册进入课程。内容采用原创知识点讲解与同步练习，不复制教材原文。</p>
+          <button class="primary" data-jump="coursePage">开始学习</button>
+        </div>
+      </section>
+
+      <section id="coursePage" class="page">
+        <div class="card">
+          <h2>苏教版一至六年级课程学习</h2>
+          <p class="muted">选择年级、学科、册别，进入知识点学习、例题、闯关测验。</p>
+          <div class="filters">
+            <select id="gradeSelect"></select>
+            <select id="subjectSelect"></select>
+            <select id="termSelect"></select>
+          </div>
+        </div>
+        <div id="courseList" class="lesson-list"></div>
+        <div id="lessonDetail" class="card lesson-detail hidden"></div>
+      </section>
+
+      <section id="practicePage" class="page">
+        <div class="card">
+          <h2>同步练习</h2>
+          <p class="muted">完成练习自动加分，答错会进入错题本。</p>
+          <div class="filters">
+            <select id="practiceGrade"></select>
+            <select id="practiceSubject"></select>
+          </div>
+        </div>
+        <div id="practiceBox" class="card"></div>
+      </section>
+
+      <section id="mistakePage" class="page">
+        <div class="card">
+          <h2>错题本</h2>
+          <p class="muted">自动保存答错题目，完成复习可加分。</p>
+        </div>
+        <div id="mistakeList"></div>
+      </section>
+
+      <section id="taskPage" class="page">
+        <div class="card">
+          <h2>学习任务</h2>
+          <div id="taskList"></div>
+        </div>
+      </section>
+
+      <section id="rewardPage" class="page">
+        <div class="card">
+          <h2>奖励中心</h2>
+          <div id="rewardList"></div>
+        </div>
+        <div class="card">
+          <h2>惩罚规则</h2>
+          <div id="penaltyList"></div>
+        </div>
+      </section>
+
+      <section id="adminPage" class="page">
+        <div class="card admin-only">
+          <h2>家长/老师后台</h2>
+          <p class="muted">可添加任务、奖励和惩罚规则。</p>
+          <form id="taskForm" class="inline-form">
+            <input id="taskTitle" placeholder="任务名称" />
+            <input id="taskPoints" type="number" placeholder="积分" />
+            <button class="secondary">添加任务</button>
+          </form>
+          <form id="rewardForm" class="inline-form">
+            <input id="rewardTitle" placeholder="奖励名称" />
+            <input id="rewardCost" type="number" placeholder="所需积分" />
+            <button class="secondary">添加奖励</button>
+          </form>
+          <form id="penaltyForm" class="inline-form">
+            <input id="penaltyTitle" placeholder="惩罚名称" />
+            <input id="penaltyPoints" type="number" placeholder="扣分" />
+            <button class="danger">添加惩罚</button>
+          </form>
+        </div>
+        <div class="card">
+          <h2>学习报告</h2>
+          <div id="reportBox"></div>
+        </div>
+        <div class="card">
+          <h2>操作记录</h2>
+          <div id="logList"></div>
+        </div>
+      </section>
+
+      <section id="rankPage" class="page">
+        <div class="card">
+          <h2>学生排行榜</h2>
+          <div id="rankList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

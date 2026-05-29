@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>星星成长学习激励系统</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="hero">
+      <div>
+        <p class="tag">中小学生学习效率提升系统</p>
+        <h1>星星成长计划</h1>
+        <p class="sub">任务打卡 · 积分奖励 · 惩罚提醒 · 排行榜 · 家长监督</p>
+      </div>
+      <div class="score-card">
+        <span>当前积分</span>
+        <strong id="totalPoints">0</strong>
+        <small id="levelName">青铜小学霸</small>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="active" data-tab="dashboard">首页</button>
+      <button data-tab="tasks">学习任务</button>
+      <button data-tab="rewards">奖励中心</button>
+      <button data-tab="punish">惩罚规则</button>
+      <button data-tab="admin">家长后台</button>
+    </nav>
+
+    <main>
+      <section id="dashboard" class="page active">
+        <div class="grid">
+          <div class="panel streak">
+            <h2>今日状态</h2>
+            <div class="big-number" id="todayDone">0</div>
+            <p>今日已完成任务</p>
+            <button id="dailyCheckBtn">每日签到 +5</button>
+          </div>
+          <div class="panel">
+            <h2>成长等级</h2>
+            <div class="progress-wrap">
+              <div id="levelProgress" class="progress"></div>
+            </div>
+            <p id="nextLevelText">距离下一等级还需 50 分</p>
+          </div>
+          <div class="panel">
+            <h2>本周目标</h2>
+            <ul class="mini-list">
+              <li>每天学习 30 分钟</li>
+              <li>完成 5 次英语跟读</li>
+              <li>错题复盘 3 次</li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>学生排行榜</h2>
+          <div id="rankList" class="rank-list"></div>
+        </div>
+      </section>
+
+      <section id="tasks" class="page">
+        <div class="panel">
+          <h2>今日学习任务</h2>
+          <div id="taskList" class="task-list"></div>
+        </div>
+      </section>
+
+      <section id="rewards" class="page">
+        <div class="panel">
+          <h2>奖励中心</h2>
+          <p class="hint">积分达到要求后可兑换奖励，兑换后会扣除对应积分。</p>
+          <div id="rewardList" class="card-list"></div>
+        </div>
+      </section>
+
+      <section id="punish" class="page">
+        <div class="panel">
+          <h2>惩罚机制</h2>
+          <p class="hint">惩罚不是打击孩子，而是让孩子知道规则和后果。</p>
+          <div id="punishList" class="card-list"></div>
+        </div>
+      </section>
+
+      <section id="admin" class="page">
+        <div class="panel">
+          <h2>家长 / 老师后台</h2>
+          <form id="taskForm" class="form">
+            <input id="taskName" placeholder="新增任务，例如：背诵10个单词" required />
+            <input id="taskPoints" type="number" placeholder="奖励积分" value="10" required />
+            <button type="submit">添加任务</button>
+          </form>
+          <form id="rewardForm" class="form">
+            <input id="rewardName" placeholder="新增奖励，例如：看动画20分钟" required />
+            <input id="rewardCost" type="number" placeholder="消耗积分" value="30" required />
+            <button type="submit">添加奖励</button>
+          </form>
+          <form id="punishForm" class="form">
+            <input id="punishName" placeholder="新增惩罚，例如：未完成作业" required />
+            <input id="punishCost" type="number" placeholder="扣除积分" value="10" required />
+            <button type="submit">添加惩罚</button>
+          </form>
+          <div class="danger-zone">
+            <button id="resetBtn">清空演示数据</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

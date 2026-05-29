@@ -24,32 +24,26 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-/* =====================================================
-   Firebase 配置区
-   重要：这里必须换成你 Firebase 页面里的真实配置
-   不要保留 "..."
-===================================================== */
+/* =========================
+   Firebase 配置
+========================= */
 
 const firebaseConfig = {
-  apiKey: "请粘贴你的真实 apiKey",
+  apiKey: "AIzaSyCyiA9YxmIMR81ken1XhAdnmtKYKQi2rMo",
   authDomain: "student-motivation-system.firebaseapp.com",
   projectId: "student-motivation-system",
-  storageBucket: "请粘贴你的真实 storageBucket",
-  messagingSenderId: "请粘贴你的真实 messagingSenderId",
-  appId: "请粘贴你的真实 appId"
+  storageBucket: "student-motivation-system.firebasestorage.app",
+  messagingSenderId: "868892030834",
+  appId: "1:868892030834:web:f46e6104f2f80388cc8feb"
 };
 
-/* =====================================================
-   初始化 Firebase
-===================================================== */
+/* =========================
+   初始化
+========================= */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-/* =====================================================
-   基础工具
-===================================================== */
 
 const $ = (id) => document.getElementById(id);
 
@@ -86,7 +80,7 @@ const defaultPenalties = [
 ];
 
 function showMsg(text) {
-  authMsg.textContent = text || "";
+  if (authMsg) authMsg.textContent = text || "";
 }
 
 function isAdmin() {
@@ -103,7 +97,7 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function level(score) {
+function getLevel(score) {
   if (score >= 300) return "钻石小学霸";
   if (score >= 180) return "黄金小学霸";
   if (score >= 80) return "白银小学霸";
@@ -117,15 +111,15 @@ function nextNeed(score) {
   return 0;
 }
 
-/* =====================================================
-   初始化默认任务、奖励、惩罚
-===================================================== */
+/* =========================
+   初始化默认数据
+========================= */
 
 async function seedDefaults() {
   const seedRef = doc(db, "system", "seed");
-  const seed = await getDoc(seedRef);
+  const seedSnap = await getDoc(seedRef);
 
-  if (seed.exists()) return;
+  if (seedSnap.exists()) return;
 
   for (const [title, points] of defaultTasks) {
     await addDoc(collection(db, "tasks"), {
@@ -157,23 +151,27 @@ async function seedDefaults() {
   });
 }
 
-/* =====================================================
+/* =========================
    日志与积分
-===================================================== */
+========================= */
 
-async function logAction(text, userId = currentUser?.uid) {
+async function logAction(text) {
+  if (!currentUser || !currentProfile) return;
+
   await addDoc(collection(db, "logs"), {
     text,
-    userId,
-    name: currentProfile?.name || "用户",
+    userId: currentUser.uid,
+    name: currentProfile.name || "用户",
     createdAt: serverTimestamp()
   });
 }
 
 async function addScore(delta, reason) {
-  const ref = doc(db, "users", currentUser.uid);
+  if (!currentUser) return;
 
-  await updateDoc(ref, {
+  const userRef = doc(db, "users", currentUser.uid);
+
+  await updateDoc(userRef, {
     score: increment(delta),
     updatedAt: serverTimestamp()
   });
@@ -181,17 +179,17 @@ async function addScore(delta, reason) {
   await logAction(`${reason}：${delta > 0 ? "+" : ""}${delta} 分`);
 }
 
-/* =====================================================
+/* =========================
    页面切换
-===================================================== */
+========================= */
 
 function switchPage(page) {
-  document.querySelectorAll(".page").forEach((x) => {
-    x.classList.toggle("active", x.id === page);
+  document.querySelectorAll(".page").forEach((el) => {
+    el.classList.toggle("active", el.id === page);
   });
 
-  document.querySelectorAll(".nav-btn").forEach((x) => {
-    x.classList.toggle("active", x.dataset.page === page);
+  document.querySelectorAll(".nav-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.page === page);
   });
 }
 
@@ -203,10 +201,11 @@ document.querySelectorAll("[data-auth-tab]").forEach((btn) => {
 
     btn.classList.add("active");
 
-    const login = btn.dataset.authTab === "login";
+    const isLogin = btn.dataset.authTab === "login";
 
-    $("loginForm").classList.toggle("hidden", !login);
-    $("registerForm").classList.toggle("hidden", login);
+    $("loginForm").classList.toggle("hidden", !isLogin);
+    $("registerForm").classList.toggle("hidden", isLogin);
+    showMsg("");
   };
 });
 
@@ -214,9 +213,9 @@ document.querySelectorAll(".nav-btn").forEach((btn) => {
   btn.onclick = () => switchPage(btn.dataset.page);
 });
 
-/* =====================================================
+/* =========================
    注册
-===================================================== */
+========================= */
 
 $("registerForm").onsubmit = async (e) => {
   e.preventDefault();
@@ -242,22 +241,22 @@ $("registerForm").onsubmit = async (e) => {
 
     await setDoc(doc(db, "users", cred.user.uid), {
       name,
-      email: cred.user.email,
+      email,
       role,
       score: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 
-    showMsg("");
+    showMsg("注册成功，正在进入系统...");
   } catch (err) {
     showMsg("注册失败：" + err.message);
   }
 };
 
-/* =====================================================
+/* =========================
    登录
-===================================================== */
+========================= */
 
 $("loginForm").onsubmit = async (e) => {
   e.preventDefault();
@@ -274,30 +273,32 @@ $("loginForm").onsubmit = async (e) => {
   }
 };
 
-/* =====================================================
-   退出登录
-===================================================== */
+/* =========================
+   退出
+========================= */
 
-$("logoutBtn").onclick = () => signOut(auth);
+$("logoutBtn").onclick = async () => {
+  await signOut(auth);
+};
 
-/* =====================================================
+/* =========================
    每日签到
-===================================================== */
+========================= */
 
 $("checkinBtn").onclick = async () => {
-  const ref = doc(db, "users", currentUser.uid, "daily", todayKey());
-  const snap = await getDoc(ref);
+  const dayRef = doc(db, "users", currentUser.uid, "daily", todayKey());
+  const daySnap = await getDoc(dayRef);
 
-  if (snap.exists() && snap.data().checkedIn) {
+  if (daySnap.exists() && daySnap.data().checkedIn) {
     alert("今天已经签到过了");
     return;
   }
 
   await setDoc(
-    ref,
+    dayRef,
     {
       checkedIn: true,
-      doneCount: snap.data()?.doneCount || 0,
+      doneCount: daySnap.data()?.doneCount || 0,
       updatedAt: serverTimestamp()
     },
     { merge: true }
@@ -306,9 +307,9 @@ $("checkinBtn").onclick = async () => {
   await addScore(5, "每日签到");
 };
 
-/* =====================================================
-   家长/老师添加任务
-===================================================== */
+/* =========================
+   添加任务
+========================= */
 
 $("taskForm").onsubmit = async (e) => {
   e.preventDefault();
@@ -318,18 +319,23 @@ $("taskForm").onsubmit = async (e) => {
     return;
   }
 
+  const title = $("taskTitle").value.trim();
+  const points = Number($("taskPoints").value);
+
+  if (!title || !points) return;
+
   await addDoc(collection(db, "tasks"), {
-    title: $("taskTitle").value.trim(),
-    points: Number($("taskPoints").value),
+    title,
+    points,
     createdAt: serverTimestamp()
   });
 
   e.target.reset();
 };
 
-/* =====================================================
-   家长/老师添加奖励
-===================================================== */
+/* =========================
+   添加奖励
+========================= */
 
 $("rewardForm").onsubmit = async (e) => {
   e.preventDefault();
@@ -339,18 +345,23 @@ $("rewardForm").onsubmit = async (e) => {
     return;
   }
 
+  const title = $("rewardTitle").value.trim();
+  const cost = Number($("rewardCost").value);
+
+  if (!title || !cost) return;
+
   await addDoc(collection(db, "rewards"), {
-    title: $("rewardTitle").value.trim(),
-    cost: Number($("rewardCost").value),
+    title,
+    cost,
     createdAt: serverTimestamp()
   });
 
   e.target.reset();
 };
 
-/* =====================================================
-   家长/老师添加惩罚
-===================================================== */
+/* =========================
+   添加惩罚
+========================= */
 
 $("penaltyForm").onsubmit = async (e) => {
   e.preventDefault();
@@ -360,221 +371,230 @@ $("penaltyForm").onsubmit = async (e) => {
     return;
   }
 
+  const title = $("penaltyTitle").value.trim();
+  const points = Number($("penaltyPoints").value);
+
+  if (!title || !points) return;
+
   await addDoc(collection(db, "penalties"), {
-    title: $("penaltyTitle").value.trim(),
-    points: Number($("penaltyPoints").value),
+    title,
+    points,
     createdAt: serverTimestamp()
   });
 
   e.target.reset();
 };
 
-/* =====================================================
-   渲染任务列表
-===================================================== */
+/* =========================
+   渲染任务
+========================= */
 
 function renderTasks() {
   const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
 
-  unsubscribers.push(
-    onSnapshot(q, (snap) => {
-      $("taskList").innerHTML = "";
+  const unsub = onSnapshot(q, (snap) => {
+    $("taskList").innerHTML = "";
 
-      snap.forEach((d) => {
-        const x = d.data();
-        const el = document.createElement("div");
-        el.className = "item";
+    snap.forEach((d) => {
+      const data = d.data();
 
-        el.innerHTML = `
-          <div>
-            <strong>${x.title}</strong>
-            <small>完成奖励 ${x.points} 分</small>
-          </div>
-          <button class="secondary">完成</button>
-        `;
+      const item = document.createElement("div");
+      item.className = "item";
 
-        el.querySelector("button").onclick = async () => {
-          const dayRef = doc(db, "users", currentUser.uid, "daily", todayKey());
-          const day = await getDoc(dayRef);
+      item.innerHTML = `
+        <div>
+          <strong>${data.title}</strong>
+          <small>完成奖励 ${data.points} 分</small>
+        </div>
+        <button class="secondary">完成</button>
+      `;
 
-          await setDoc(
-            dayRef,
-            {
-              doneCount: (day.data()?.doneCount || 0) + 1,
-              updatedAt: serverTimestamp()
-            },
-            { merge: true }
-          );
+      item.querySelector("button").onclick = async () => {
+        const dayRef = doc(db, "users", currentUser.uid, "daily", todayKey());
+        const daySnap = await getDoc(dayRef);
 
-          await addScore(Number(x.points || 0), `完成任务「${x.title}」`);
-        };
+        await setDoc(
+          dayRef,
+          {
+            doneCount: (daySnap.data()?.doneCount || 0) + 1,
+            updatedAt: serverTimestamp()
+          },
+          { merge: true }
+        );
 
-        $("taskList").appendChild(el);
-      });
-    })
-  );
+        await addScore(Number(data.points || 0), `完成任务「${data.title}」`);
+      };
+
+      $("taskList").appendChild(item);
+    });
+  });
+
+  unsubscribers.push(unsub);
 }
 
-/* =====================================================
-   渲染奖励列表
-===================================================== */
+/* =========================
+   渲染奖励
+========================= */
 
 function renderRewards() {
   const q = query(collection(db, "rewards"), orderBy("createdAt", "desc"));
 
-  unsubscribers.push(
-    onSnapshot(q, (snap) => {
-      $("rewardList").innerHTML = "";
+  const unsub = onSnapshot(q, (snap) => {
+    $("rewardList").innerHTML = "";
 
-      snap.forEach((d) => {
-        const x = d.data();
-        const el = document.createElement("div");
-        el.className = "item";
+    snap.forEach((d) => {
+      const data = d.data();
 
-        el.innerHTML = `
-          <div>
-            <strong>${x.title}</strong>
-            <small>需要 ${x.cost} 分</small>
-          </div>
-          <button class="primary">兑换</button>
-        `;
+      const item = document.createElement("div");
+      item.className = "item";
 
-        el.querySelector("button").onclick = async () => {
-          if ((currentProfile.score || 0) < x.cost) {
-            alert("积分不足");
-            return;
-          }
+      item.innerHTML = `
+        <div>
+          <strong>${data.title}</strong>
+          <small>需要 ${data.cost} 分</small>
+        </div>
+        <button class="primary">兑换</button>
+      `;
 
-          await addScore(-Number(x.cost || 0), `兑换奖励「${x.title}」`);
-        };
+      item.querySelector("button").onclick = async () => {
+        if ((currentProfile.score || 0) < data.cost) {
+          alert("积分不足");
+          return;
+        }
 
-        $("rewardList").appendChild(el);
-      });
-    })
-  );
+        await addScore(-Number(data.cost || 0), `兑换奖励「${data.title}」`);
+      };
+
+      $("rewardList").appendChild(item);
+    });
+  });
+
+  unsubscribers.push(unsub);
 }
 
-/* =====================================================
-   渲染惩罚列表
-===================================================== */
+/* =========================
+   渲染惩罚
+========================= */
 
 function renderPenalties() {
   const q = query(collection(db, "penalties"), orderBy("createdAt", "desc"));
 
-  unsubscribers.push(
-    onSnapshot(q, (snap) => {
-      $("penaltyList").innerHTML = "";
+  const unsub = onSnapshot(q, (snap) => {
+    $("penaltyList").innerHTML = "";
 
-      snap.forEach((d) => {
-        const x = d.data();
-        const el = document.createElement("div");
-        el.className = "item";
+    snap.forEach((d) => {
+      const data = d.data();
 
-        el.innerHTML = `
-          <div>
-            <strong>${x.title}</strong>
-            <small>扣 ${x.points} 分</small>
-          </div>
-          <button class="danger">执行扣分</button>
-        `;
+      const item = document.createElement("div");
+      item.className = "item";
 
-        el.querySelector("button").onclick = async () => {
-          if (!isAdmin()) {
-            alert("只有家长或老师可以执行扣分");
-            return;
-          }
+      item.innerHTML = `
+        <div>
+          <strong>${data.title}</strong>
+          <small>扣 ${data.points} 分</small>
+        </div>
+        <button class="danger">执行扣分</button>
+      `;
 
-          await addScore(-Number(x.points || 0), `惩罚扣分「${x.title}」`);
-        };
+      item.querySelector("button").onclick = async () => {
+        if (!isAdmin()) {
+          alert("只有家长或老师可以执行扣分");
+          return;
+        }
 
-        $("penaltyList").appendChild(el);
-      });
-    })
-  );
+        await addScore(-Number(data.points || 0), `惩罚扣分「${data.title}」`);
+      };
+
+      $("penaltyList").appendChild(item);
+    });
+  });
+
+  unsubscribers.push(unsub);
 }
 
-/* =====================================================
+/* =========================
    排行榜
-===================================================== */
+========================= */
 
 function renderRanking() {
   const q = query(collection(db, "users"), orderBy("score", "desc"), limit(20));
 
-  unsubscribers.push(
-    onSnapshot(q, (snap) => {
-      const html = [];
-      let i = 1;
+  const unsub = onSnapshot(q, (snap) => {
+    let html = "";
+    let index = 1;
 
-      snap.forEach((d) => {
-        const x = d.data();
+    snap.forEach((d) => {
+      const data = d.data();
 
-        html.push(`
-          <div class="rank-item">
-            <strong>${i++}. ${x.name || "未命名"} 
-              <small>${roleName(x.role)}</small>
-            </strong>
-            <span class="pill">${x.score || 0} 分</span>
-          </div>
-        `);
-      });
+      html += `
+        <div class="rank-item">
+          <strong>${index++}. ${data.name || "未命名"} 
+            <small>${roleName(data.role)}</small>
+          </strong>
+          <span class="pill">${data.score || 0} 分</span>
+        </div>
+      `;
+    });
 
-      $("rankList").innerHTML = html.join("") || "暂无数据";
-      $("adminStudents").innerHTML = html.join("") || "暂无数据";
-    })
-  );
+    $("rankList").innerHTML = html || "暂无数据";
+    $("adminStudents").innerHTML = html || "暂无数据";
+  });
+
+  unsubscribers.push(unsub);
 }
 
-/* =====================================================
+/* =========================
    操作记录
-===================================================== */
+========================= */
 
 function renderLogs() {
   const q = query(collection(db, "logs"), orderBy("createdAt", "desc"), limit(50));
 
-  unsubscribers.push(
-    onSnapshot(q, (snap) => {
-      $("logList").innerHTML = "";
+  const unsub = onSnapshot(q, (snap) => {
+    $("logList").innerHTML = "";
 
-      snap.forEach((d) => {
-        const x = d.data();
-        const el = document.createElement("div");
-        el.className = "log-item";
+    snap.forEach((d) => {
+      const data = d.data();
 
-        const t = x.createdAt?.toDate
-          ? x.createdAt.toDate().toLocaleString()
-          : "刚刚";
+      const time = data.createdAt?.toDate
+        ? data.createdAt.toDate().toLocaleString()
+        : "刚刚";
 
-        el.innerHTML = `
-          <div>
-            <strong>${x.name || "用户"}</strong><br>
-            <span>${x.text}</span><br>
-            <small>${t}</small>
-          </div>
-        `;
+      const item = document.createElement("div");
+      item.className = "log-item";
 
-        $("logList").appendChild(el);
-      });
-    })
-  );
+      item.innerHTML = `
+        <div>
+          <strong>${data.name || "用户"}</strong><br>
+          <span>${data.text || ""}</span><br>
+          <small>${time}</small>
+        </div>
+      `;
+
+      $("logList").appendChild(item);
+    });
+  });
+
+  unsubscribers.push(unsub);
 }
 
-/* =====================================================
-   今日完成任务数量
-===================================================== */
+/* =========================
+   今日数据
+========================= */
 
 function renderDaily() {
-  const ref = doc(db, "users", currentUser.uid, "daily", todayKey());
+  const dayRef = doc(db, "users", currentUser.uid, "daily", todayKey());
 
-  unsubscribers.push(
-    onSnapshot(ref, (snap) => {
-      $("todayDone").textContent = snap.data()?.doneCount || 0;
-    })
-  );
+  const unsub = onSnapshot(dayRef, (snap) => {
+    $("todayDone").textContent = snap.data()?.doneCount || 0;
+  });
+
+  unsubscribers.push(unsub);
 }
 
-/* =====================================================
-   更新用户信息界面
-===================================================== */
+/* =========================
+   用户界面
+========================= */
 
 function updateProfileUI() {
   if (!currentProfile) return;
@@ -582,9 +602,9 @@ function updateProfileUI() {
   const score = currentProfile.score || 0;
 
   $("scoreValue").textContent = score;
-  $("levelValue").textContent = level(score);
+  $("levelValue").textContent = getLevel(score);
 
-  $("userLine").textContent = `${currentProfile.name} · ${roleName(
+  $("userLine").textContent = `${currentProfile.name || "用户"} · ${roleName(
     currentProfile.role
   )} · ${currentUser.email}`;
 
@@ -594,31 +614,32 @@ function updateProfileUI() {
     ? `距离下一等级还需 ${need} 分`
     : "已达到最高等级";
 
-  const percent =
-    score < 80
-      ? (score / 80) * 100
-      : score < 180
-      ? ((score - 80) / 100) * 100
-      : score < 300
-      ? ((score - 180) / 120) * 100
-      : 100;
+  let percent = 100;
 
-  $("levelBar").style.width =
-    Math.max(0, Math.min(100, percent)) + "%";
+  if (score < 80) {
+    percent = (score / 80) * 100;
+  } else if (score < 180) {
+    percent = ((score - 80) / 100) * 100;
+  } else if (score < 300) {
+    percent = ((score - 180) / 120) * 100;
+  }
 
-  document.querySelectorAll(".admin-only").forEach((x) => {
-    x.classList.toggle("hidden", !isAdmin());
+  $("levelBar").style.width = Math.max(0, Math.min(100, percent)) + "%";
+
+  document.querySelectorAll(".admin-only").forEach((el) => {
+    el.classList.toggle("hidden", !isAdmin());
   });
 }
 
-/* =====================================================
+/* =========================
    登录状态监听
-===================================================== */
+========================= */
 
 onAuthStateChanged(auth, async (user) => {
   unsubscribers.forEach((fn) => fn());
   unsubscribers = [];
   currentUser = user;
+  currentProfile = null;
 
   if (!user) {
     authView.classList.remove("hidden");
@@ -628,15 +649,15 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     await seedDefaults();
-  } catch (e) {
-    console.warn("初始化默认数据失败：", e);
+  } catch (err) {
+    console.warn("初始化默认数据失败：", err);
   }
 
-  const ref = doc(db, "users", user.uid);
-  let snap = await getDoc(ref);
+  const userRef = doc(db, "users", user.uid);
+  let userSnap = await getDoc(userRef);
 
-  if (!snap.exists()) {
-    await setDoc(ref, {
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
       name: user.email.split("@")[0],
       email: user.email,
       role: "student",
@@ -649,12 +670,12 @@ onAuthStateChanged(auth, async (user) => {
   authView.classList.add("hidden");
   mainView.classList.remove("hidden");
 
-  unsubscribers.push(
-    onSnapshot(ref, (s) => {
-      currentProfile = s.data();
-      updateProfileUI();
-    })
-  );
+  const unsubUser = onSnapshot(userRef, (snap) => {
+    currentProfile = snap.data();
+    updateProfileUI();
+  });
+
+  unsubscribers.push(unsubUser);
 
   renderTasks();
   renderRewards();
